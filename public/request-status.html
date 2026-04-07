@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Downloads – APK Hub VIP</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+<div class="vip-container">
+    <div class="animated-bg"><div class="gradient-sphere"></div><div class="gradient-sphere delay"></div></div>
+    <nav class="vip-nav"><div class="nav-brand"><i class="fas fa-crown"></i><span>APK <span class="vip-text">Hub VIP</span></span></div><div class="nav-links"><a href="/"><i class="fas fa-home"></i> Home</a><a href="/request-status.html" class="active"><i class="fas fa-download"></i> My Downloads</a></div></nav>
+    <main class="main-content" style="max-width:800px; margin:2rem auto;">
+        <div class="glass-card" style="padding:2rem;">
+            <h1><i class="fas fa-download"></i> My Downloads</h1>
+            <p>Enter your email address to see approved requests and download APKs.</p>
+            <form id="checkStatusForm"><input type="email" id="userEmail" placeholder="Your email address" required style="width:100%; padding:0.8rem; margin-bottom:1rem;"><button type="submit" class="submit-request-btn">Check Status</button></form>
+            <div id="statusResult" style="margin-top:2rem;"></div>
+        </div>
+    </main>
+    <footer class="vip-footer"><p>&copy; 2025 APK Hub VIP</p></footer>
+</div>
+<script>
+document.getElementById('checkStatusForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('userEmail').value;
+    const resultDiv = document.getElementById('statusResult');
+    resultDiv.innerHTML = '<p>Loading...</p>';
+    const res = await fetch(`/api/my-requests?email=${encodeURIComponent(email)}`);
+    const requests = await res.json();
+    if (!requests.length) { resultDiv.innerHTML = '<p>No requests found.</p>'; return; }
+    let html = '<h3>Your Requests</h3><div class="requests-list">';
+    for (const req of requests) {
+        let action = '';
+        if (req.status === 'approved') action = `<button class="download-btn" data-id="${req.id}" data-app="${req.appName}">⬇️ Download APK</button>`;
+        else if (req.status === 'pending') action = '<span class="status-badge pending">Pending Approval</span>';
+        else action = '<span class="status-badge rejected">Rejected</span>';
+        html += `<div class="request-card"><h4>${escapeHtml(req.appName)}</h4><p>Requested: ${new Date(req.createdAt).toLocaleDateString()}</p><p>Status: <span class="status-badge ${req.status}">${req.status}</span></p>${action}</div>`;
+    }
+    html += '</div>';
+    resultDiv.innerHTML = html;
+    document.querySelectorAll('.download-btn').forEach(btn => btn.addEventListener('click', async () => {
+        const rid = btn.dataset.id, name = btn.dataset.app;
+        const dlRes = await fetch(`/api/download/${rid}`);
+        if (dlRes.ok) {
+            const blob = await dlRes.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `${name}.apk`; document.body.appendChild(a); a.click(); URL.revokeObjectURL(url); a.remove();
+        } else alert('Download failed');
+    }));
+});
+function escapeHtml(s) { return s.replace(/[&<>]/g, function(m){if(m==='&')return'&amp;';if(m==='<')return'&lt;';if(m==='>')return'&gt;';return m;}); }
+</script>
+<style>.requests-list{display:flex;flex-direction:column;gap:1rem;margin-top:1rem;}.request-card{background:rgba(255,255,255,0.05);border-radius:12px;padding:1rem;border:1px solid var(--glass-border);}.status-badge{display:inline-block;padding:4px 8px;border-radius:12px;font-size:0.75rem;font-weight:600;text-transform:uppercase;}.status-badge.approved{background:#4caf50;color:white;}.status-badge.pending{background:#ff9800;color:white;}.status-badge.rejected{background:#f44336;color:white;}.download-btn{margin-top:0.5rem;padding:0.5rem 1rem;background:linear-gradient(135deg,var(--primary),var(--secondary));border:none;border-radius:8px;color:white;cursor:pointer;}</style>
+</body>
+</html>

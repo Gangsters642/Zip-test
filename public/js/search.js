@@ -1,0 +1,1 @@
+// Search functionality is integrated into home.js

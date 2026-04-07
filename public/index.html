@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APK Hub VIP | Premium APK Distribution</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+<div class="vip-container">
+    <div class="animated-bg"><div class="gradient-sphere"></div><div class="gradient-sphere delay"></div></div>
+    <nav class="vip-nav">
+        <div class="nav-brand"><i class="fas fa-crown"></i><span>APK <span class="vip-text">Hub VIP</span></span></div>
+        <div class="nav-links">
+            <a href="/" class="active"><i class="fas fa-home"></i> Home</a>
+            <a href="/request-status.html"><i class="fas fa-download"></i> My Downloads</a>
+        </div>
+        <div class="nav-user"><i class="fas fa-user-circle"></i><a href="#" id="hiddenAdminLink" style="display:none;">Admin</a></div>
+    </nav>
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="glow-text">Premium <span class="gradient-text">APK</span> Hub</h1>
+            <p>Discover, download, and request the latest apps with VIP access.</p>
+            <div class="search-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="searchInput" placeholder="Search apps..." autocomplete="off">
+                <div id="suggestionsDropdown" class="suggestions-dropdown"></div>
+            </div>
+        </div>
+    </section>
+    <main class="main-content">
+        <section class="apps-section">
+            <div class="section-header"><h2><i class="fas fa-th-large"></i> <span id="sectionTitle">Available Apps</span></h2></div>
+            <div id="didYouMeanBanner" class="did-you-mean" style="display:none;"></div>
+            <div id="appList" class="app-grid"><div class="loading-skeleton"><div class="skeleton-card"></div></div></div>
+            <div id="searchClearBtn" style="display:none; text-align:center; margin-top:1rem;"><button id="clearSearchBtn"><i class="fas fa-times"></i> Clear Search</button></div>
+        </section>
+        <section class="recommendations-section">
+            <div class="section-header"><h2><i class="fas fa-robot"></i> Trending Now 🔥</h2></div>
+            <div id="recommendList" class="app-grid horizontal-scroll"></div>
+        </section>
+    </main>
+    <footer class="vip-footer"><p>&copy; 2025 APK Hub VIP — All rights reserved. <span class="admin-hint">⚡</span></p></footer>
+</div>
+<div id="requestModal" class="modal">
+    <div class="modal-content glass-card">
+        <span class="close-modal">&times;</span>
+        <h3 id="modalAppName">Request Download</h3>
+        <form id="requestForm" enctype="multipart/form-data">
+            <input type="hidden" id="requestAppId" name="appId">
+            <input type="hidden" id="requestIsPaid" name="isPaid">
+            <div class="form-group"><label>Your Name *</label><input type="text" name="name" required></div>
+            <div class="form-group"><label>Your Email *</label><input type="email" name="email" required></div>
+            <div id="paymentMethods" style="display:none;">
+                <label>Payment Instructions:</label>
+                <div class="methods-grid"><div class="method">📱 EasyPaisa: 03XXXXXXXXX</div><div class="method">📱 JazzCash: 03XXXXXXXXX</div><div class="method">₿ Crypto: BTC address...</div><div class="method">💬 WhatsApp/Telegram: +92XXX...</div></div>
+                <label>Upload Payment Proof</label><input type="file" name="proofImage" accept="image/*">
+            </div>
+            <button type="submit" class="submit-request-btn">Submit Request</button>
+        </form>
+        <div id="requestMsg"></div>
+    </div>
+</div>
+<script src="/js/home.js"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel – APK Hub VIP</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+<div class="admin-container">
+    <div id="loginContainer" class="login-container glass-card">
+        <h2><i class="fas fa-shield-alt"></i> Admin Access</h2>
+        <form id="loginForm"><input type="password" id="adminPassword" placeholder="Enter admin password" required><button type="submit">Login</button><div id="loginError" class="error-msg"></div></form>
+    </div>
+    <div id="dashboardContainer" style="display:none;">
+        <nav class="admin-nav"><div class="nav-brand"><i class="fas fa-crown"></i><span>APK <span class="vip-text">Admin</span></span></div><button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button></nav>
+        <div class="admin-layout">
+            <aside class="sidebar"><ul><li class="active" data-tab="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</li><li data-tab="apps"><i class="fas fa-mobile-alt"></i> Manage Apps</li><li data-tab="requests"><i class="fas fa-tasks"></i> Payment Requests</li><li data-tab="settings"><i class="fas fa-cog"></i> Website Settings</li></ul></aside>
+            <main class="admin-main">
+                <div id="dashboardTab" class="tab-content active"><h1>Dashboard</h1><div class="stats-grid"><div class="stat-card"><i class="fas fa-mobile-alt"></i><h3 id="totalApps">0</h3><p>Total Apps</p></div><div class="stat-card"><i class="fas fa-check-circle"></i><h3 id="approvedApps">0</h3><p>Approved Apps</p></div><div class="stat-card"><i class="fas fa-clock"></i><h3 id="pendingApps">0</h3><p>Pending Apps</p></div><div class="stat-card"><i class="fas fa-download"></i><h3 id="totalRequests">0</h3><p>Total Requests</p></div><div class="stat-card"><i class="fas fa-hourglass-half"></i><h3 id="pendingRequests">0</h3><p>Pending Requests</p></div></div></div>
+                <div id="appsTab" class="tab-content"><h1>Manage Apps</h1><button id="uploadAppBtn" class="primary-btn">+ Upload New App</button><div id="appsListAdmin" class="apps-table-container"><p>Loading apps...</p></div></div>
+                <div id="requestsTab" class="tab-content"><h1>Payment & Download Requests</h1><div id="requestsList"></div></div>
+                <div id="settingsTab" class="tab-content"><h1>Website Settings</h1><form id="settingsForm"><div class="form-group"><label>Website Status</label><div class="toggle-switch"><input type="checkbox" id="websiteToggle"><label for="websiteToggle"></label><span id="statusText">Active</span></div></div><div class="form-group"><label>Shutdown Message</label><textarea id="shutdownMessage" rows="3"></textarea></div><div class="form-group"><label>Site Title</label><input type="text" id="siteTitle"></div><button type="submit" class="save-btn">Save Settings</button><div id="settingsMsg"></div></form></div>
+            </main>
+        </div>
+    </div>
+</div>
+<script src="/js/admin.js"></script>
+</body>
+</html>
