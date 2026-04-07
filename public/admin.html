@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel – APK Hub VIP</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/admin.css">
@@ -12,12 +13,26 @@
 <div class="admin-container">
     <div id="loginContainer" class="login-container glass-card">
         <h2><i class="fas fa-shield-alt"></i> Admin Access</h2>
-        <form id="loginForm"><input type="password" id="adminPassword" placeholder="Enter admin password" required><button type="submit">Login</button><div id="loginError" class="error-msg"></div></form>
+        <form id="loginForm">
+            <input type="password" id="adminPassword" placeholder="Enter admin password" required>
+            <button type="submit">Login</button>
+            <div id="loginError" class="error-msg"></div>
+        </form>
     </div>
     <div id="dashboardContainer" style="display:none;">
-        <nav class="admin-nav"><div class="nav-brand"><i class="fas fa-crown"></i><span>APK <span class="vip-text">Admin</span></span></div><button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button></nav>
+        <nav class="admin-nav">
+            <div class="nav-brand"><i class="fas fa-crown"></i><span>APK <span class="vip-text">Admin</span></span></div>
+            <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </nav>
         <div class="admin-layout">
-            <aside class="sidebar"><ul><li class="active" data-tab="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</li><li data-tab="apps"><i class="fas fa-mobile-alt"></i> Manage Apps</li><li data-tab="requests"><i class="fas fa-tasks"></i> Payment Requests</li><li data-tab="settings"><i class="fas fa-cog"></i> Website Settings</li></ul></aside>
+            <aside class="sidebar">
+                <ul>
+                    <li class="active" data-tab="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</li>
+                    <li data-tab="apps"><i class="fas fa-mobile-alt"></i> Manage Apps</li>
+                    <li data-tab="requests"><i class="fas fa-tasks"></i> Payment Requests</li>
+                    <li data-tab="settings"><i class="fas fa-cog"></i> Website Settings</li>
+                </ul>
+            </aside>
             <main class="admin-main">
                 <div id="dashboardTab" class="tab-content active"><h1>Dashboard</h1><div class="stats-grid"><div class="stat-card"><i class="fas fa-mobile-alt"></i><h3 id="totalApps">0</h3><p>Total Apps</p></div><div class="stat-card"><i class="fas fa-check-circle"></i><h3 id="approvedApps">0</h3><p>Approved Apps</p></div><div class="stat-card"><i class="fas fa-clock"></i><h3 id="pendingApps">0</h3><p>Pending Apps</p></div><div class="stat-card"><i class="fas fa-download"></i><h3 id="totalRequests">0</h3><p>Total Requests</p></div><div class="stat-card"><i class="fas fa-hourglass-half"></i><h3 id="pendingRequests">0</h3><p>Pending Requests</p></div></div></div>
                 <div id="appsTab" class="tab-content"><h1>Manage Apps</h1><button id="uploadAppBtn" class="primary-btn">+ Upload New App</button><div id="appsListAdmin" class="apps-table-container"><p>Loading apps...</p></div></div>
@@ -27,6 +42,123 @@
         </div>
     </div>
 </div>
-<script src="/js/admin.js"></script>
+<script>
+// Hardcoded password check
+const ADMIN_PASSWORD = 'admin123';
+
+document.getElementById('loginForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const pwd = document.getElementById('adminPassword').value;
+    if (pwd === ADMIN_PASSWORD) {
+        document.getElementById('loginContainer').style.display = 'none';
+        document.getElementById('dashboardContainer').style.display = 'block';
+        loadStats();
+        loadApps();
+        loadRequests();
+    } else {
+        document.getElementById('loginError').innerText = 'Invalid password';
+    }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', () => {
+    document.getElementById('loginContainer').style.display = 'block';
+    document.getElementById('dashboardContainer').style.display = 'none';
+});
+
+let currentApps = [];
+
+async function loadStats() {
+    const res = await fetch('/admin/api/stats');
+    const s = await res.json();
+    document.getElementById('totalApps').innerText = s.totalApps;
+    document.getElementById('approvedApps').innerText = s.approvedApps;
+    document.getElementById('pendingApps').innerText = s.pendingApps;
+    document.getElementById('totalRequests').innerText = s.totalRequests;
+    document.getElementById('pendingRequests').innerText = s.pendingRequests;
+}
+
+async function loadApps() {
+    const res = await fetch('/admin/api/apps');
+    currentApps = await res.json();
+    const container = document.getElementById('appsListAdmin');
+    if (!currentApps.length) { container.innerHTML = '<p>No apps.</p>'; return; }
+    let html = '<div class="apps-table-wrapper"><table class="apps-table"><thead><tr><th>Icon</th><th>Name</th><th>Version</th><th>Status</th><th>Price</th><th>Actions</th></tr></thead><tbody>';
+    currentApps.forEach(app => {
+        html += `<tr><td>${app.image ? `<img src="${app.image}" class="table-icon">` : '<i class="fas fa-mobile-alt"></i>'}</td><td><strong>${escapeHtml(app.name)}</strong><br><small>${escapeHtml(app.description.substring(0,50))}</small></td><td>${escapeHtml(app.version)}</td><td><span class="status-badge ${app.status}">${app.status}</span></td><td>${app.isPaid ? `PKR ${app.price}` : 'Free'}</td><td class="actions">${app.status === 'pending' ? `<button class="approve-btn" data-id="${app.id}">Approve</button><button class="reject-btn" data-id="${app.id}">Reject</button>` : ''}<button class="edit-btn" data-id="${app.id}">Edit</button><button class="delete-btn" data-id="${app.id}">Delete</button></td></tr>`;
+    });
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+    document.querySelectorAll('.approve-btn').forEach(btn => btn.addEventListener('click', () => approveApp(btn.dataset.id)));
+    document.querySelectorAll('.reject-btn').forEach(btn => btn.addEventListener('click', () => rejectApp(btn.dataset.id)));
+    document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', () => openEditModal(btn.dataset.id)));
+    document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', () => deleteApp(btn.dataset.id)));
+}
+
+async function approveApp(id) {
+    await fetch(`/admin/api/app/${id}/approve`, { method: 'POST' });
+    loadApps();
+    loadStats();
+}
+
+async function rejectApp(id) {
+    await fetch(`/admin/api/app/${id}/reject`, { method: 'POST' });
+    loadApps();
+    loadStats();
+}
+
+async function deleteApp(id) {
+    if(!confirm('Delete?')) return;
+    await fetch(`/admin/api/app/${id}`, { method: 'DELETE' });
+    loadApps();
+    loadStats();
+}
+
+function openEditModal(id) {
+    alert('Edit feature - will implement');
+}
+
+async function loadRequests() {
+    const res = await fetch('/admin/api/requests');
+    const reqs = await res.json();
+    const container = document.getElementById('requestsList');
+    if (!reqs.length) { container.innerHTML = '<p>No requests.</p>'; return; }
+    let html = '<div class="apps-table-wrapper"><table class="apps-table"><thead><tr><th>User</th><th>Email</th><th>App</th><th>Paid</th><th>Proof</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+    reqs.forEach(r => {
+        html += `<tr><td>${escapeHtml(r.userName)}</td><td>${escapeHtml(r.userEmail)}</td><td>${escapeHtml(r.appName)}</td><td>${r.isPaid ? 'Yes' : 'No'}</td><td>${r.proofImage ? `<a href="${r.proofImage}" target="_blank">View</a>` : '-'}</td><td><span class="status-badge ${r.status}">${r.status}</span></td><td class="actions">${r.status === 'pending' ? `<button class="approve-request" data-id="${r.id}">Approve</button><button class="reject-request" data-id="${r.id}">Reject</button>` : ''}</td></tr>`;
+    });
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+    document.querySelectorAll('.approve-request').forEach(btn => btn.addEventListener('click', () => approveRequest(btn.dataset.id)));
+    document.querySelectorAll('.reject-request').forEach(btn => btn.addEventListener('click', () => rejectRequest(btn.dataset.id)));
+}
+
+async function approveRequest(id) {
+    await fetch(`/admin/api/request/${id}/approve`, { method: 'POST' });
+    loadRequests();
+    loadStats();
+}
+
+async function rejectRequest(id) {
+    await fetch(`/admin/api/request/${id}/reject`, { method: 'POST' });
+    loadRequests();
+    loadStats();
+}
+
+function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+
+// Tab switching
+document.querySelectorAll('.sidebar li').forEach(tab => {
+    tab.addEventListener('click', () => {
+        const id = tab.dataset.tab;
+        document.querySelectorAll('.sidebar li').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(`${id}Tab`).classList.add('active');
+        if (id === 'dashboard') loadStats();
+        if (id === 'apps') loadApps();
+        if (id === 'requests') loadRequests();
+    });
+});
+</script>
 </body>
 </html>
