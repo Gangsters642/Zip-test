@@ -3,7 +3,6 @@ const router = express.Router();
 const fs = require('fs');
 const path = require('path');
 const { readJSON, writeJSON } = require('../utils/jsonHelpers');
-const { uploadProof } = require('../middleware/upload');
 
 // Get all approved apps
 router.get('/apps', (req, res) => {
@@ -20,33 +19,40 @@ router.get('/app/:id', (req, res) => {
   res.json(app);
 });
 
-// Submit download request
-router.post('/request-download', uploadProof, (req, res) => {
+// Submit download request (without proof upload for now)
+router.post('/request-download', (req, res) => {
   const { name, email, appId, isPaid } = req.body;
-  if (!name || !email || !appId) return res.status(400).json({ error: 'Name, email, and app ID required' });
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Invalid email' });
+  if (!name || !email || !appId) {
+    return res.status(400).json({ error: 'Name, email, and app ID required' });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: 'Invalid email' });
+  }
 
   const apps = readJSON('data/apps.json');
   const app = apps.find(a => a.id === appId);
   if (!app) return res.status(404).json({ error: 'App not found' });
 
-  const isPaidBool = isPaid === 'true' || isPaid === true;
-  let proofPath = '';
-  if (isPaidBool) {
-    if (!req.file) return res.status(400).json({ error: 'Payment proof required' });
-    proofPath = `/uploads/proofs/${req.file.filename}`;
-  }
-
   const requests = readJSON('data/requests.json');
   const newRequest = {
     id: Date.now().toString(),
-    appId, appName: app.name, userName: name, userEmail: email,
-    isPaid: isPaidBool, price: isPaidBool ? app.price : 0,
-    proofImage: proofPath, status: 'pending', createdAt: new Date().toISOString(), approvedAt: null
+    appId: appId,
+    appName: app.name,
+    userName: name,
+    userEmail: email,
+    isPaid: isPaid === 'true' || isPaid === true,
+    price: app.price,
+    proofImage: '',
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    approvedAt: null
   };
   requests.push(newRequest);
-  if (writeJSON('data/requests.json', requests)) res.json({ success: true, message: 'Request submitted', requestId: newRequest.id });
-  else res.status(500).json({ error: 'Failed to save request' });
+  if (writeJSON('data/requests.json', requests)) {
+    res.json({ success: true, message: 'Request submitted', requestId: newRequest.id });
+  } else {
+    res.status(500).json({ error: 'Failed to save request' });
+  }
 });
 
 // Get user requests by email
