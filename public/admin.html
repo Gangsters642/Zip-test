@@ -4,10 +4,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel – APK Hub VIP</title>
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/css/admin.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --primary: #6c63ff; --secondary: #ff6584; --glass: rgba(255,255,255,0.05); --glass-border: rgba(255,255,255,0.1); --card-bg: rgba(20,20,40,0.8); }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:linear-gradient(135deg,#0f0c29,#302b63,#24243e); color:#f0f0f0; min-height:100vh; }
+        .login-container { max-width:400px; margin:100px auto; padding:2rem; text-align:center; background:var(--card-bg); backdrop-filter:blur(12px); border-radius:24px; border:1px solid var(--glass-border); }
+        .login-container input { width:100%; padding:0.8rem; margin-bottom:1rem; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); border-radius:12px; color:white; }
+        .login-container button { width:100%; padding:0.8rem; background:linear-gradient(135deg,var(--primary),var(--secondary)); border:none; border-radius:12px; color:white; font-weight:bold; cursor:pointer; }
+        .error-msg { color:#ff6584; margin-top:0.5rem; }
+        .admin-nav { display:flex; justify-content:space-between; align-items:center; padding:1rem 2rem; background:var(--glass); backdrop-filter:blur(12px); border-bottom:1px solid var(--glass-border); }
+        .logout-btn { background:rgba(255,101,132,0.2); border:1px solid var(--secondary); padding:0.5rem 1rem; border-radius:8px; color:white; cursor:pointer; }
+        .admin-layout { display:flex; min-height:calc(100vh - 70px); }
+        .sidebar { width:250px; background:var(--glass); backdrop-filter:blur(8px); border-right:1px solid var(--glass-border); padding:1.5rem 0; }
+        .sidebar ul { list-style:none; }
+        .sidebar li { padding:0.8rem 1.5rem; margin:0.2rem 0; cursor:pointer; display:flex; align-items:center; gap:0.8rem; }
+        .sidebar li.active, .sidebar li:hover { background:rgba(108,99,255,0.2); border-left:3px solid var(--primary); }
+        .admin-main { flex:1; padding:2rem; overflow-y:auto; }
+        .tab-content { display:none; animation:fadeIn 0.3s; }
+        .tab-content.active { display:block; }
+        @keyframes fadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+        .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1.5rem; margin-top:2rem; }
+        .stat-card { background:var(--card-bg); border-radius:20px; padding:1.5rem; text-align:center; border:1px solid var(--glass-border); }
+        .stat-card i { font-size:2rem; color:var(--primary); }
+        .stat-card h3 { font-size:2rem; margin:0.5rem 0; }
+        .form-group { margin-bottom:1.5rem; }
+        .form-group label { display:block; margin-bottom:0.5rem; }
+        .form-group input, .form-group textarea { width:100%; padding:0.7rem; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); border-radius:8px; color:white; }
+        .primary-btn, .save-btn { background:linear-gradient(135deg,var(--primary),var(--secondary)); border:none; padding:0.7rem 1.5rem; border-radius:12px; color:white; font-weight:bold; cursor:pointer; }
+        .apps-table-wrapper { overflow-x:auto; margin-top:1rem; }
+        .apps-table { width:100%; border-collapse:collapse; background:var(--card-bg); border-radius:16px; overflow:hidden; }
+        .apps-table th, .apps-table td { padding:12px; text-align:left; border-bottom:1px solid var(--glass-border); }
+        .apps-table th { background:rgba(108,99,255,0.2); }
+        .table-icon { width:40px; height:40px; object-fit:cover; border-radius:8px; }
+        .status-badge { display:inline-block; padding:4px 8px; border-radius:12px; font-size:0.75rem; font-weight:600; text-transform:uppercase; }
+        .status-badge.approved { background:#4caf50; color:white; }
+        .status-badge.pending { background:#ff9800; color:white; }
+        .actions button { margin:0 4px; padding:4px 8px; border:none; border-radius:6px; cursor:pointer; }
+        .approve-btn { background:#4caf50; color:white; }
+        .reject-btn { background:#f44336; color:white; }
+        .edit-btn { background:#2196f3; color:white; }
+        .delete-btn { background:#ff9800; color:white; }
+        
+        /* Modal Styles */
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); z-index:1000; align-items:center; justify-content:center; }
+        .modal-content { max-width:500px; width:90%; max-height:85vh; overflow-y:auto; padding:2rem; background:var(--card-bg); border-radius:24px; border:1px solid var(--glass-border); position:relative; }
+        .close-modal { position:absolute; top:1rem; right:1rem; font-size:1.5rem; cursor:pointer; }
+        
+        /* Progress Bar */
+        .progress-container { width:100%; background:#333; border-radius:10px; margin:1rem 0; }
+        .progress-bar { width:0%; height:30px; background:linear-gradient(90deg, var(--primary), var(--secondary)); border-radius:10px; transition:width 0.3s; text-align:center; line-height:30px; color:white; font-size:12px; }
+        
+        @media (max-width:768px){ .admin-layout{flex-direction:column;} .sidebar{width:100%; border-right:none; border-bottom:1px solid var(--glass-border);} .sidebar ul{display:flex; overflow-x:auto;} .sidebar li{white-space:nowrap;} }
+    </style>
 </head>
 <body>
 <div class="admin-container">
@@ -20,152 +70,24 @@
         </form>
     </div>
     <div id="dashboardContainer" style="display:none;">
-        <nav class="admin-nav">
-            <div class="nav-brand"><i class="fas fa-crown"></i><span>APK <span class="vip-text">Admin</span></span></div>
-            <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
-        </nav>
+        <nav class="admin-nav"><div class="nav-brand"><i class="fas fa-crown"></i><span>APK <span class="vip-text">Admin</span></span></div><button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button></nav>
         <div class="admin-layout">
-            <aside class="sidebar">
-                <ul>
-                    <li class="active" data-tab="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</li>
-                    <li data-tab="apps"><i class="fas fa-mobile-alt"></i> Manage Apps</li>
-                    <li data-tab="requests"><i class="fas fa-tasks"></i> Payment Requests</li>
-                    <li data-tab="settings"><i class="fas fa-cog"></i> Website Settings</li>
-                </ul>
-            </aside>
+            <aside class="sidebar"><ul><li class="active" data-tab="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</li><li data-tab="apps"><i class="fas fa-mobile-alt"></i> Manage Apps</li><li data-tab="requests"><i class="fas fa-tasks"></i> Payment Requests</li><li data-tab="settings"><i class="fas fa-cog"></i> Website Settings</li></ul></aside>
             <main class="admin-main">
                 <div id="dashboardTab" class="tab-content active"><h1>Dashboard</h1><div class="stats-grid"><div class="stat-card"><i class="fas fa-mobile-alt"></i><h3 id="totalApps">0</h3><p>Total Apps</p></div><div class="stat-card"><i class="fas fa-check-circle"></i><h3 id="approvedApps">0</h3><p>Approved Apps</p></div><div class="stat-card"><i class="fas fa-clock"></i><h3 id="pendingApps">0</h3><p>Pending Apps</p></div><div class="stat-card"><i class="fas fa-download"></i><h3 id="totalRequests">0</h3><p>Total Requests</p></div><div class="stat-card"><i class="fas fa-hourglass-half"></i><h3 id="pendingRequests">0</h3><p>Pending Requests</p></div></div></div>
-                <div id="appsTab" class="tab-content"><h1>Manage Apps</h1><button id="uploadAppBtn" class="primary-btn">+ Upload New App</button><div id="appsListAdmin" class="apps-table-container"><p>Loading apps...</p></div></div>
+                <div id="appsTab" class="tab-content"><h1>Manage Apps</h1><button id="uploadAppBtn" class="primary-btn"><i class="fas fa-plus"></i> Upload New App</button><div id="appsListAdmin" class="apps-table-container"><p>Loading apps...</p></div></div>
                 <div id="requestsTab" class="tab-content"><h1>Payment & Download Requests</h1><div id="requestsList"></div></div>
                 <div id="settingsTab" class="tab-content"><h1>Website Settings</h1><form id="settingsForm"><div class="form-group"><label>Website Status</label><div class="toggle-switch"><input type="checkbox" id="websiteToggle"><label for="websiteToggle"></label><span id="statusText">Active</span></div></div><div class="form-group"><label>Shutdown Message</label><textarea id="shutdownMessage" rows="3"></textarea></div><div class="form-group"><label>Site Title</label><input type="text" id="siteTitle"></div><button type="submit" class="save-btn">Save Settings</button><div id="settingsMsg"></div></form></div>
             </main>
         </div>
     </div>
 </div>
-<script>
-// Hardcoded password check
-const ADMIN_PASSWORD = 'admin123';
 
-document.getElementById('loginForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const pwd = document.getElementById('adminPassword').value;
-    if (pwd === ADMIN_PASSWORD) {
-        document.getElementById('loginContainer').style.display = 'none';
-        document.getElementById('dashboardContainer').style.display = 'block';
-        loadStats();
-        loadApps();
-        loadRequests();
-    } else {
-        document.getElementById('loginError').innerText = 'Invalid password';
-    }
-});
-
-document.getElementById('logoutBtn').addEventListener('click', () => {
-    document.getElementById('loginContainer').style.display = 'block';
-    document.getElementById('dashboardContainer').style.display = 'none';
-});
-
-let currentApps = [];
-
-async function loadStats() {
-    const res = await fetch('/admin/api/stats');
-    const s = await res.json();
-    document.getElementById('totalApps').innerText = s.totalApps;
-    document.getElementById('approvedApps').innerText = s.approvedApps;
-    document.getElementById('pendingApps').innerText = s.pendingApps;
-    document.getElementById('totalRequests').innerText = s.totalRequests;
-    document.getElementById('pendingRequests').innerText = s.pendingRequests;
-}
-
-async function loadApps() {
-    const res = await fetch('/admin/api/apps');
-    currentApps = await res.json();
-    const container = document.getElementById('appsListAdmin');
-    if (!currentApps.length) { container.innerHTML = '<p>No apps.</p>'; return; }
-    let html = '<div class="apps-table-wrapper"><table class="apps-table"><thead><tr><th>Icon</th><th>Name</th><th>Version</th><th>Status</th><th>Price</th><th>Actions</th></tr></thead><tbody>';
-    currentApps.forEach(app => {
-        html += `<tr><td>${app.image ? `<img src="${app.image}" class="table-icon">` : '<i class="fas fa-mobile-alt"></i>'}</td><td><strong>${escapeHtml(app.name)}</strong><br><small>${escapeHtml(app.description.substring(0,50))}</small></td><td>${escapeHtml(app.version)}</td><td><span class="status-badge ${app.status}">${app.status}</span></td><td>${app.isPaid ? `PKR ${app.price}` : 'Free'}</td><td class="actions">${app.status === 'pending' ? `<button class="approve-btn" data-id="${app.id}">Approve</button><button class="reject-btn" data-id="${app.id}">Reject</button>` : ''}<button class="edit-btn" data-id="${app.id}">Edit</button><button class="delete-btn" data-id="${app.id}">Delete</button></td></tr>`;
-    });
-    html += '</tbody></table></div>';
-    container.innerHTML = html;
-    document.querySelectorAll('.approve-btn').forEach(btn => btn.addEventListener('click', () => approveApp(btn.dataset.id)));
-    document.querySelectorAll('.reject-btn').forEach(btn => btn.addEventListener('click', () => rejectApp(btn.dataset.id)));
-    document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', () => openEditModal(btn.dataset.id)));
-    document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', () => deleteApp(btn.dataset.id)));
-}
-
-async function approveApp(id) {
-    await fetch(`/admin/api/app/${id}/approve`, { method: 'POST' });
-    loadApps();
-    loadStats();
-}
-
-async function rejectApp(id) {
-    await fetch(`/admin/api/app/${id}/reject`, { method: 'POST' });
-    loadApps();
-    loadStats();
-}
-
-async function deleteApp(id) {
-    if(!confirm('Delete?')) return;
-    await fetch(`/admin/api/app/${id}`, { method: 'DELETE' });
-    loadApps();
-    loadStats();
-}
-
-function openEditModal(id) {
-    alert('Edit feature - will implement');
-}
-
-async function loadRequests() {
-    const res = await fetch('/admin/api/requests');
-    const reqs = await res.json();
-    const container = document.getElementById('requestsList');
-    if (!reqs.length) { container.innerHTML = '<p>No requests.</p>'; return; }
-    let html = '<div class="apps-table-wrapper"><table class="apps-table"><thead><tr><th>User</th><th>Email</th><th>App</th><th>Paid</th><th>Proof</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
-    reqs.forEach(r => {
-        html += `<tr><td>${escapeHtml(r.userName)}</td><td>${escapeHtml(r.userEmail)}</td><td>${escapeHtml(r.appName)}</td><td>${r.isPaid ? 'Yes' : 'No'}</td><td>${r.proofImage ? `<a href="${r.proofImage}" target="_blank">View</a>` : '-'}</td><td><span class="status-badge ${r.status}">${r.status}</span></td><td class="actions">${r.status === 'pending' ? `<button class="approve-request" data-id="${r.id}">Approve</button><button class="reject-request" data-id="${r.id}">Reject</button>` : ''}</td></tr>`;
-    });
-    html += '</tbody></table></div>';
-    container.innerHTML = html;
-    document.querySelectorAll('.approve-request').forEach(btn => btn.addEventListener('click', () => approveRequest(btn.dataset.id)));
-    document.querySelectorAll('.reject-request').forEach(btn => btn.addEventListener('click', () => rejectRequest(btn.dataset.id)));
-}
-
-async function approveRequest(id) {
-    await fetch(`/admin/api/request/${id}/approve`, { method: 'POST' });
-    loadRequests();
-    loadStats();
-}
-
-async function rejectRequest(id) {
-    await fetch(`/admin/api/request/${id}/reject`, { method: 'POST' });
-    loadRequests();
-    loadStats();
-}
-
-function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
-
-// Tab switching
-document.querySelectorAll('.sidebar li').forEach(tab => {
-    tab.addEventListener('click', () => {
-        const id = tab.dataset.tab;
-        document.querySelectorAll('.sidebar li').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.getElementById(`${id}Tab`).classList.add('active');
-        if (id === 'dashboard') loadStats();
-        if (id === 'apps') loadApps();
-        if (id === 'requests') loadRequests();
-    });
-});
-</script>
-
-<!-- Upload Modal -->
+<!-- Upload Modal with Progress Bar -->
 <div id="uploadModal" class="modal">
     <div class="modal-content glass-card">
         <span class="close-modal">&times;</span>
-        <h2>Upload New App</h2>
+        <h2><i class="fas fa-cloud-upload-alt"></i> Upload New App</h2>
         <form id="uploadForm" enctype="multipart/form-data">
             <div class="form-group">
                 <label>App Name *</label>
@@ -173,7 +95,7 @@ document.querySelectorAll('.sidebar li').forEach(tab => {
             </div>
             <div class="form-group">
                 <label>Description *</label>
-                <textarea name="description" required></textarea>
+                <textarea name="description" rows="3" required></textarea>
             </div>
             <div class="form-group">
                 <label>Version *</label>
@@ -198,79 +120,156 @@ document.querySelectorAll('.sidebar li').forEach(tab => {
                 <label>Price (PKR)</label>
                 <input type="number" name="price" step="0.01" value="0">
             </div>
-            <button type="submit" class="primary-btn">Upload App</button>
+            <div id="progressContainer" class="progress-container" style="display:none;">
+                <div id="progressBar" class="progress-bar">0%</div>
+            </div>
+            <button type="submit" class="primary-btn" id="submitUploadBtn"><i class="fas fa-upload"></i> Upload App</button>
         </form>
         <div id="uploadMsg"></div>
     </div>
 </div>
 
-<style>
-.modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.8);
-    backdrop-filter: blur(8px);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-}
-.modal-content {
-    max-width: 500px;
-    width: 90%;
-    max-height: 85vh;
-    overflow-y: auto;
-    padding: 2rem;
-    background: var(--card-bg);
-    border-radius: 24px;
-    border: 1px solid var(--glass-border);
-    position: relative;
-}
-.close-modal {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    font-size: 1.5rem;
-    cursor: pointer;
-}
-.form-group {
-    margin-bottom: 1rem;
-}
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-}
-.form-group input, .form-group textarea {
-    width: 100%;
-    padding: 0.5rem;
-    background: rgba(0,0,0,0.3);
-    border: 1px solid var(--glass-border);
-    border-radius: 8px;
-    color: white;
-}
-.primary-btn {
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    border: none;
-    padding: 0.7rem 1.5rem;
-    border-radius: 12px;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-    width: 100%;
-}
-</style>
-
 <script>
-// Upload modal functionality
+// Hardcoded password
+const ADMIN_PASSWORD = 'admin123';
+
+// Login
+document.getElementById('loginForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const pwd = document.getElementById('adminPassword').value;
+    if (pwd === ADMIN_PASSWORD) {
+        document.getElementById('loginContainer').style.display = 'none';
+        document.getElementById('dashboardContainer').style.display = 'block';
+        loadStats();
+        loadApps();
+        loadRequests();
+    } else {
+        document.getElementById('loginError').innerText = 'Invalid password';
+    }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', () => {
+    document.getElementById('loginContainer').style.display = 'block';
+    document.getElementById('dashboardContainer').style.display = 'none';
+});
+
+// Tab switching
+document.querySelectorAll('.sidebar li').forEach(tab => {
+    tab.addEventListener('click', () => {
+        const id = tab.dataset.tab;
+        document.querySelectorAll('.sidebar li').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(`${id}Tab`).classList.add('active');
+        if (id === 'dashboard') loadStats();
+        if (id === 'apps') loadApps();
+        if (id === 'requests') loadRequests();
+    });
+});
+
+let currentApps = [];
+
+async function loadStats() {
+    const res = await fetch('/admin/api/stats');
+    const s = await res.json();
+    document.getElementById('totalApps').innerText = s.totalApps;
+    document.getElementById('approvedApps').innerText = s.approvedApps;
+    document.getElementById('pendingApps').innerText = s.pendingApps;
+    document.getElementById('totalRequests').innerText = s.totalRequests;
+    document.getElementById('pendingRequests').innerText = s.pendingRequests;
+}
+
+async function loadApps() {
+    const res = await fetch('/admin/api/apps');
+    currentApps = await res.json();
+    const container = document.getElementById('appsListAdmin');
+    if (!currentApps.length) { container.innerHTML = '<p>No apps.</p>'; return; }
+    let html = '<div class="apps-table-wrapper"><table class="apps-table"><thead><tr><th>Icon</th><th>Name</th><th>Version</th><th>Status</th><th>Price</th><th>Actions</th></tr></thead><tbody>';
+    currentApps.forEach(app => {
+        html += `<tr>
+            <td>${app.image ? `<img src="${app.image}" class="table-icon">` : '<i class="fas fa-mobile-alt"></i>'}</td>
+            <td><strong>${escapeHtml(app.name)}</strong><br><small>${escapeHtml(app.description.substring(0,50))}</small></td>
+            <td>${escapeHtml(app.version)}</td>
+            <td><span class="status-badge ${app.status}">${app.status}</span></td>
+            <td>${app.isPaid ? `PKR ${app.price}` : 'Free'}</td>
+            <td class="actions">
+                ${app.status === 'pending' ? `<button class="approve-btn" data-id="${app.id}">Approve</button><button class="reject-btn" data-id="${app.id}">Reject</button>` : ''}
+                <button class="edit-btn" data-id="${app.id}">Edit</button>
+                <button class="delete-btn" data-id="${app.id}">Delete</button>
+            </td>
+        </tr>`;
+    });
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+    document.querySelectorAll('.approve-btn').forEach(btn => btn.addEventListener('click', () => approveApp(btn.dataset.id)));
+    document.querySelectorAll('.reject-btn').forEach(btn => btn.addEventListener('click', () => rejectApp(btn.dataset.id)));
+    document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', () => deleteApp(btn.dataset.id)));
+}
+
+async function approveApp(id) {
+    await fetch(`/admin/api/app/${id}/approve`, { method: 'POST' });
+    loadApps();
+    loadStats();
+}
+
+async function rejectApp(id) {
+    await fetch(`/admin/api/app/${id}/reject`, { method: 'POST' });
+    loadApps();
+    loadStats();
+}
+
+async function deleteApp(id) {
+    if(!confirm('Delete this app permanently?')) return;
+    await fetch(`/admin/api/app/${id}`, { method: 'DELETE' });
+    loadApps();
+    loadStats();
+}
+
+async function loadRequests() {
+    const res = await fetch('/admin/api/requests');
+    const reqs = await res.json();
+    const container = document.getElementById('requestsList');
+    if (!reqs.length) { container.innerHTML = '<p>No requests.</p>'; return; }
+    let html = '<div class="apps-table-wrapper"><table class="apps-table"><thead><tr><th>User</th><th>Email</th><th>App</th><th>Paid</th><th>Proof</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+    reqs.forEach(r => {
+        html += `<tr>
+            <td>${escapeHtml(r.userName)}</td>
+            <td>${escapeHtml(r.userEmail)}</td>
+            <td>${escapeHtml(r.appName)}</td>
+            <td>${r.isPaid ? 'Yes' : 'No'}</td>
+            <td>${r.proofImage ? `<a href="${r.proofImage}" target="_blank">View</a>` : '-'}</td>
+            <td><span class="status-badge ${r.status}">${r.status}</span></td>
+            <td class="actions">${r.status === 'pending' ? `<button class="approve-request" data-id="${r.id}">Approve</button><button class="reject-request" data-id="${r.id}">Reject</button>` : ''}</td>
+        </tr>`;
+    });
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+    document.querySelectorAll('.approve-request').forEach(btn => btn.addEventListener('click', () => approveRequest(btn.dataset.id)));
+    document.querySelectorAll('.reject-request').forEach(btn => btn.addEventListener('click', () => rejectRequest(btn.dataset.id)));
+}
+
+async function approveRequest(id) {
+    await fetch(`/admin/api/request/${id}/approve`, { method: 'POST' });
+    loadRequests();
+    loadStats();
+}
+
+async function rejectRequest(id) {
+    await fetch(`/admin/api/request/${id}/reject`, { method: 'POST' });
+    loadRequests();
+    loadStats();
+}
+
+// Upload Modal with Progress
 const uploadModal = document.getElementById('uploadModal');
 const uploadBtn = document.getElementById('uploadAppBtn');
 const closeModal = document.querySelector('#uploadModal .close-modal');
 
 uploadBtn.onclick = () => {
     uploadModal.style.display = 'flex';
+    document.getElementById('uploadForm').reset();
+    document.getElementById('uploadMsg').innerHTML = '';
+    document.getElementById('progressContainer').style.display = 'none';
 };
 
 closeModal.onclick = () => {
@@ -283,34 +282,72 @@ window.onclick = (event) => {
     }
 };
 
-// Upload form submission
+// Upload with progress
 document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const msgDiv = document.getElementById('uploadMsg');
-    msgDiv.innerHTML = 'Uploading...';
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const submitBtn = document.getElementById('submitUploadBtn');
+    
+    progressContainer.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressBar.innerText = '0%';
+    msgDiv.innerHTML = '';
+    submitBtn.disabled = true;
+    submitBtn.innerText = 'Uploading...';
     
     try {
-        const res = await fetch('/admin/api/upload', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await res.json();
-        if (res.ok) {
-            msgDiv.innerHTML = '<span style="color:#4caf50;">✅ Upload successful! App is pending approval.</span>';
-            e.target.reset();
-            setTimeout(() => {
-                uploadModal.style.display = 'none';
-                loadApps();
-                loadStats();
-            }, 2000);
-        } else {
-            msgDiv.innerHTML = `<span style="color:#ff6584;">❌ Error: ${data.error}</span>`;
-        }
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/admin/api/upload', true);
+        
+        xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+                const percent = Math.round((event.loaded / event.total) * 100);
+                progressBar.style.width = percent + '%';
+                progressBar.innerText = percent + '%';
+            }
+        };
+        
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+                msgDiv.innerHTML = '<span style="color:#4caf50;">✅ Upload successful! App is pending approval.</span>';
+                progressBar.style.width = '100%';
+                progressBar.innerText = '100%';
+                e.target.reset();
+                setTimeout(() => {
+                    uploadModal.style.display = 'none';
+                    loadApps();
+                    loadStats();
+                }, 2000);
+            } else {
+                const data = JSON.parse(xhr.responseText);
+                msgDiv.innerHTML = `<span style="color:#ff6584;">❌ Error: ${data.error || 'Upload failed'}</span>`;
+                progressContainer.style.display = 'none';
+            }
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Upload App';
+        };
+        
+        xhr.onerror = () => {
+            msgDiv.innerHTML = '<span style="color:#ff6584;">❌ Network error. Please try again.</span>';
+            progressContainer.style.display = 'none';
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Upload App';
+        };
+        
+        xhr.send(formData);
     } catch (err) {
-        msgDiv.innerHTML = '<span style="color:#ff6584;">Upload failed. Check console.</span>';
+        msgDiv.innerHTML = '<span style="color:#ff6584;">❌ Upload failed. Check console.</span>';
+        progressContainer.style.display = 'none';
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Upload App';
     }
 });
+
+function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
 </script>
 </body>
 </html>
