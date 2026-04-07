@@ -43,9 +43,7 @@ function isAuthenticated(req, res, next) {
     }
 }
 
-// ==================== API ROUTES ====================
-
-// Dashboard stats
+// ==================== DASHBOARD STATS ====================
 router.get('/api/stats', isAuthenticated, (req, res) => {
     const apps = readJSON('data/apps.json');
     const requests = readJSON('data/requests.json');
@@ -58,12 +56,13 @@ router.get('/api/stats', isAuthenticated, (req, res) => {
     });
 });
 
-// Get all apps
+// ==================== GET ALL APPS ====================
 router.get('/api/apps', isAuthenticated, (req, res) => {
-    res.json(readJSON('data/apps.json'));
+    const apps = readJSON('data/apps.json');
+    res.json(apps);
 });
 
-// ==================== UPLOAD APP (SIMPLIFIED - WORKING) ====================
+// ==================== UPLOAD APP ====================
 router.post('/api/upload', isAuthenticated, uploadAppPackage, (req, res) => {
     console.log('=== UPLOAD REQUEST RECEIVED ===');
     console.log('Body:', req.body);
@@ -84,7 +83,8 @@ router.post('/api/upload', isAuthenticated, uploadAppPackage, (req, res) => {
         // Get existing apps
         let apps = [];
         try {
-            apps = readJSON('data/apps.json');
+            const appsData = readJSON('data/apps.json');
+            if (Array.isArray(appsData)) apps = appsData;
         } catch(e) {
             apps = [];
         }
@@ -106,15 +106,20 @@ router.post('/api/upload', isAuthenticated, uploadAppPackage, (req, res) => {
         
         apps.push(newApp);
         
-        if (writeJSON('data/apps.json', apps)) {
+        // Save to file
+        const saveResult = writeJSON('data/apps.json', apps);
+        console.log('Save result:', saveResult);
+        
+        if (saveResult) {
             console.log('App saved successfully:', newApp.id);
-            res.json({ success: true, app: newApp, message: 'App uploaded and pending approval' });
+            return res.json({ success: true, app: newApp, message: 'App uploaded and pending approval' });
         } else {
-            res.status(500).json({ error: 'Failed to save app data' });
+            console.error('Failed to save app data');
+            return res.status(500).json({ error: 'Failed to save app data' });
         }
     } catch (err) {
         console.error('Upload error:', err);
-        res.status(500).json({ error: 'Server error: ' + err.message });
+        return res.status(500).json({ error: 'Server error: ' + err.message });
     }
 });
 
