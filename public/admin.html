@@ -160,5 +160,157 @@ document.querySelectorAll('.sidebar li').forEach(tab => {
     });
 });
 </script>
+
+<!-- Upload Modal -->
+<div id="uploadModal" class="modal">
+    <div class="modal-content glass-card">
+        <span class="close-modal">&times;</span>
+        <h2>Upload New App</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>App Name *</label>
+                <input type="text" name="name" required>
+            </div>
+            <div class="form-group">
+                <label>Description *</label>
+                <textarea name="description" required></textarea>
+            </div>
+            <div class="form-group">
+                <label>Version *</label>
+                <input type="text" name="version" required>
+            </div>
+            <div class="form-group">
+                <label>Tags (comma separated)</label>
+                <input type="text" name="tags" placeholder="game, tool, social">
+            </div>
+            <div class="form-group">
+                <label>APK File *</label>
+                <input type="file" name="apkFile" accept=".apk" required>
+            </div>
+            <div class="form-group">
+                <label>Icon Image</label>
+                <input type="file" name="iconImage" accept="image/*">
+            </div>
+            <div class="form-group">
+                <label><input type="checkbox" name="isPaid" value="true"> Paid App</label>
+            </div>
+            <div class="form-group">
+                <label>Price (PKR)</label>
+                <input type="number" name="price" step="0.01" value="0">
+            </div>
+            <button type="submit" class="primary-btn">Upload App</button>
+        </form>
+        <div id="uploadMsg"></div>
+    </div>
+</div>
+
+<style>
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+.modal-content {
+    max-width: 500px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 2rem;
+    background: var(--card-bg);
+    border-radius: 24px;
+    border: 1px solid var(--glass-border);
+    position: relative;
+}
+.close-modal {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+.form-group {
+    margin-bottom: 1rem;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+.form-group input, .form-group textarea {
+    width: 100%;
+    padding: 0.5rem;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: white;
+}
+.primary-btn {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 12px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+}
+</style>
+
+<script>
+// Upload modal functionality
+const uploadModal = document.getElementById('uploadModal');
+const uploadBtn = document.getElementById('uploadAppBtn');
+const closeModal = document.querySelector('#uploadModal .close-modal');
+
+uploadBtn.onclick = () => {
+    uploadModal.style.display = 'flex';
+};
+
+closeModal.onclick = () => {
+    uploadModal.style.display = 'none';
+};
+
+window.onclick = (event) => {
+    if (event.target === uploadModal) {
+        uploadModal.style.display = 'none';
+    }
+};
+
+// Upload form submission
+document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const msgDiv = document.getElementById('uploadMsg');
+    msgDiv.innerHTML = 'Uploading...';
+    
+    try {
+        const res = await fetch('/admin/api/upload', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        if (res.ok) {
+            msgDiv.innerHTML = '<span style="color:#4caf50;">✅ Upload successful! App is pending approval.</span>';
+            e.target.reset();
+            setTimeout(() => {
+                uploadModal.style.display = 'none';
+                loadApps();
+                loadStats();
+            }, 2000);
+        } else {
+            msgDiv.innerHTML = `<span style="color:#ff6584;">❌ Error: ${data.error}</span>`;
+        }
+    } catch (err) {
+        msgDiv.innerHTML = '<span style="color:#ff6584;">Upload failed. Check console.</span>';
+    }
+});
+</script>
 </body>
 </html>
