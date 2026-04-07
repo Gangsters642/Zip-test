@@ -1,7 +1,7 @@
 {
   "name": "apk-hub",
   "version": "1.0.0",
-  "description": "APK distribution system with VIP Pro UI and hidden admin panel",
+  "description": "APK Hub VIP - Complete APK Distribution System",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -15,5 +15,8 @@
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
-  }
+  },
+  "keywords": ["apk", "upload", "admin", "vip"],
+  "author": "APK Hub",
+  "license": "MIT"
 }

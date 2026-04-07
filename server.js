@@ -3,7 +3,6 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const cookieParser = require('cookie-parser');
-const { checkSiteStatus, getSettings } = require('./middleware/siteStatus');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,17 +11,6 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(checkSiteStatus);
-
-// Create upload directories if they don't exist
-const dirs = [
-    './uploads/apks',
-    './uploads/images',
-    './uploads/proofs'
-];
-dirs.forEach(dir => {
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-});
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -31,30 +19,16 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // ==================== ROUTES ====================
 const apiRoutes = require('./routes/api');
 const adminRoutes = require('./routes/admin');
-const adminPageRoutes = require('./routes/admin-page');
 
 app.use('/api', apiRoutes);
-app.use(process.env.ADMIN_SECRET_ROUTE, adminRoutes);
-app.use(process.env.ADMIN_SECRET_ROUTE, adminPageRoutes);
+app.use('/super-secret-admin', adminRoutes);
 
-// ==================== WEBSITE SHUTDOWN HANDLER ====================
-app.get('/', (req, res, next) => {
-    if (req.siteDown) {
-        return res.send(`
-            <!DOCTYPE html>
-            <html>
-            <head><title>Maintenance</title><style>body{font-family:sans-serif;text-align:center;padding:50px;background:#111;color:#fff;}</style></head>
-            <body>
-                <h1>🔧 Website is temporarily offline</h1>
-                <p>${req.shutdownMessage}</p>
-                <small>Admin panel is still accessible at the secret route.</small>
-            </body>
-            </html>
-        `);
-    }
-    next();
+// ==================== SERVE ADMIN HTML ====================
+app.get('/super-secret-admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
+// ==================== WEBSITE SHUTDOWN HANDLER ====================
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -62,5 +36,5 @@ app.get('/', (req, res) => {
 // ==================== START SERVER ====================
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
-    console.log(`🔐 Admin panel: ${process.env.ADMIN_SECRET_ROUTE}`);
+    console.log(`🔐 Admin panel: http://localhost:${PORT}/super-secret-admin`);
 });
