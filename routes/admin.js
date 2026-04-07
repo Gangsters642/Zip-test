@@ -12,10 +12,11 @@ function generateSessionId() {
     return Math.random().toString(36).substring(2, 15);
 }
 
-// Login route
+// ==================== LOGIN ROUTE (Password Hardcoded) ====================
 router.post('/login', (req, res) => {
     const { password } = req.body;
-    if (password === process.env.ADMIN_PASSWORD) {
+    // Password hardcoded - admin123
+    if (password === 'admin123') {
         const sessionId = generateSessionId();
         sessions.set(sessionId, { loggedIn: true });
         res.cookie('sessionId', sessionId, { httpOnly: true, maxAge: 8 * 60 * 60 * 1000 });
@@ -75,7 +76,9 @@ router.post('/api/upload', isAuthenticated, uploadAppPackage, (req, res) => {
     const apps = readJSON('data/apps.json');
     const newApp = {
         id: Date.now().toString(),
-        name, description, version,
+        name,
+        description,
+        version,
         tags: tags ? tags.split(',').map(t => t.trim()) : [],
         image: req.files.iconImage ? `/uploads/images/${req.files.iconImage[0].filename}` : '',
         filePath: `/uploads/apks/${req.files.apkFile[0].filename}`,
@@ -102,6 +105,60 @@ router.post('/api/app/:id/approve', isAuthenticated, (req, res) => {
         res.json({ success: true });
     } else {
         res.status(500).json({ error: 'Approval failed' });
+    }
+});
+
+// Reject app (delete)
+router.post('/api/app/:id/reject', isAuthenticated, (req, res) => {
+    const apps = readJSON('data/apps.json');
+    const index = apps.findIndex(a => a.id === req.params.id);
+    if (index === -1) return res.status(404).json({ error: 'App not found' });
+    const app = apps[index];
+    const apkPath = path.join(__dirname, '..', app.filePath);
+    if (fs.existsSync(apkPath)) fs.unlinkSync(apkPath);
+    if (app.image && fs.existsSync(path.join(__dirname, '..', app.image))) {
+        fs.unlinkSync(path.join(__dirname, '..', app.image));
+    }
+    apps.splice(index, 1);
+    if (writeJSON('data/apps.json', apps)) {
+        res.json({ success: true });
+    } else {
+        res.status(500).json({ error: 'Rejection failed' });
+    }
+});
+
+// Edit app
+router.put('/api/app/:id', isAuthenticated, uploadAppPackage, (req, res) => {
+    const appId = req.params.id;
+    const apps = readJSON('data/apps.json');
+    const index = apps.findIndex(a => a.id === appId);
+    if (index === -1) return res.status(404).json({ error: 'App not found' });
+    const app = apps[index];
+    const { name, description, version, tags, price, isPaid } = req.body;
+    if (name) app.name = name;
+    if (description) app.description = description;
+    if (version) app.version = version;
+    if (tags) app.tags = tags.split(',').map(t => t.trim());
+    if (price !== undefined) app.price = parseFloat(price);
+    if (isPaid !== undefined) app.isPaid = isPaid === 'true' || isPaid === true;
+    if (req.files) {
+        if (req.files.apkFile) {
+            const oldPath = path.join(__dirname, '..', app.filePath);
+            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+            app.filePath = `/uploads/apks/${req.files.apkFile[0].filename}`;
+        }
+        if (req.files.iconImage) {
+            if (app.image && fs.existsSync(path.join(__dirname, '..', app.image))) {
+                fs.unlinkSync(path.join(__dirname, '..', app.image));
+            }
+            app.image = `/uploads/images/${req.files.iconImage[0].filename}`;
+        }
+    }
+    apps[index] = app;
+    if (writeJSON('data/apps.json', apps)) {
+        res.json({ success: true, app });
+    } else {
+        res.status(500).json({ error: 'Update failed' });
     }
 });
 
@@ -140,6 +197,19 @@ router.post('/api/request/:id/approve', isAuthenticated, (req, res) => {
         res.json({ success: true });
     } else {
         res.status(500).json({ error: 'Approval failed' });
+    }
+});
+
+// Reject request
+router.post('/api/request/:id/reject', isAuthenticated, (req, res) => {
+    const requests = readJSON('data/requests.json');
+    const reqIndex = requests.findIndex(r => r.id === req.params.id);
+    if (reqIndex === -1) return res.status(404).json({ error: 'Request not found' });
+    requests[reqIndex].status = 'rejected';
+    if (writeJSON('data/requests.json', requests)) {
+        res.json({ success: true });
+    } else {
+        res.status(500).json({ error: 'Rejection failed' });
     }
 });
 
