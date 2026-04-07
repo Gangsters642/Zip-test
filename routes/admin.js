@@ -62,9 +62,9 @@ router.get('/api/apps', isAuthenticated, (req, res) => {
     res.json(apps);
 });
 
-// ==================== UPLOAD APP ====================
+// ==================== UPLOAD APP (SIMPLE WORKING VERSION) ====================
 router.post('/api/upload', isAuthenticated, uploadAppPackage, (req, res) => {
-    console.log('=== UPLOAD REQUEST RECEIVED ===');
+    console.log('=== UPLOAD START ===');
     console.log('Body:', req.body);
     console.log('Files:', req.files);
     
@@ -82,64 +82,9 @@ router.post('/api/upload', isAuthenticated, uploadAppPackage, (req, res) => {
         
         // Get existing apps
         let apps = [];
-// ==================== UPLOAD APP (SIMPLIFIED) ====================
-router.post('/api/upload', isAuthenticated, uploadAppPackage, (req, res) => {
-    console.log('=== UPLOAD REQUEST ===');
-    
-    try {
-        const { name, description, version } = req.body;
-        
-        // Basic validation
-        if (!name || !description || !version) {
-            return res.status(400).json({ error: 'Name, description, version required' });
-        }
-        
-        if (!req.files || !req.files.apkFile) {
-            return res.status(400).json({ error: 'APK file required' });
-        }
-        
-        // Create new app object
-        const newApp = {
-            id: Date.now().toString(),
-            name: name,
-            description: description,
-            version: version,
-            tags: req.body.tags ? req.body.tags.split(',').map(t => t.trim()) : [],
-            image: req.files.iconImage ? `/uploads/images/${req.files.iconImage[0].filename}` : '',
-            filePath: `/uploads/apks/${req.files.apkFile[0].filename}`,
-            isPaid: req.body.isPaid === 'true',
-            price: parseFloat(req.body.price) || 0,
-            status: 'pending',
-            createdAt: new Date().toISOString()
-        };
-        
-        // Read existing apps
-        let apps = [];
         try {
-            const existing = readJSON('data/apps.json');
-            if (Array.isArray(existing)) apps = existing;
-        } catch(e) {
-            apps = [];
-        }
-        
-        apps.push(newApp);
-        
-        // Save
-        const saved = writeJSON('data/apps.json', apps);
-        
-        if (saved) {
-            console.log('App saved:', newApp.id);
-            return res.status(200).json({ success: true, app: newApp });
-        } else {
-            return res.status(500).json({ error: 'Failed to save' });
-        }
-    } catch (err) {
-        console.error('Upload error:', err);
-        return res.status(500).json({ error: err.message });
-    }
-});        try {
-            const appsData = readJSON('data/apps.json');
-            if (Array.isArray(appsData)) apps = appsData;
+            apps = readJSON('data/apps.json');
+            if (!Array.isArray(apps)) apps = [];
         } catch(e) {
             apps = [];
         }
@@ -167,7 +112,7 @@ router.post('/api/upload', isAuthenticated, uploadAppPackage, (req, res) => {
         
         if (saveResult) {
             console.log('App saved successfully:', newApp.id);
-            return res.json({ success: true, app: newApp, message: 'App uploaded and pending approval' });
+            return res.status(200).json({ success: true, app: newApp, message: 'App uploaded and pending approval' });
         } else {
             console.error('Failed to save app data');
             return res.status(500).json({ error: 'Failed to save app data' });
